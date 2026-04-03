@@ -7,8 +7,6 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Testing code commit and push status
-
 // * Please DO NOT INCLUDE the private app access token in your repo. Don't do this practicum in your normal account.
 const PRIVATE_APP_ACCESS = '';
 
@@ -70,4 +68,4 @@ app.post('/update', async (req, res) => {
 
 
 // * Localhost
-app.listen(3000, () => console.log('Listening on http://localhost:3000'));
+app.listen(6000, () => console.log('Listening on http://localhost:6000'));
