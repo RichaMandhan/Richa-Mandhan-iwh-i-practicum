@@ -13,7 +13,7 @@ app.use(express.json());
 // * Code for Route 1 goes here
 app.get('/', async (req, res) => {
     // Get Custom Object Data
-    const memberships = 'https://api.hubspot.com/crm/v3/objects/2-227693084?properties=name,membership_type,start_date,end_date';
+    const memberships = 'https://api.hubspot.com/crm/v3/objects/2-227693084?properties=name,membership_type,start_date,end_date&associations=contacts';
     const headers = {
         Authorization: `Bearer ${process.env.PRIVATE_APP_ACCESS}`,
         'Content-Type': 'application/json'
@@ -21,7 +21,34 @@ app.get('/', async (req, res) => {
     try {
         const resp = await axios.get(memberships, { headers });
         const data = resp.data.results;
-        res.render('home', { title: 'Home Page', data });      
+
+        // get associated contact info and update the data.
+        if(data.length > 0) {
+            for (let i = 0; i < data.length; i++) {
+
+                const contactId = data[i]?.associations?.contacts?.results?.[0]?.id;
+
+                if (contactId) {
+                    try {
+                        const contactResp = await axios.get(
+                            `https://api.hubspot.com/crm/v3/objects/contacts/${contactId}?properties=firstname,lastname`,
+                            { headers }
+                        );
+                        const contact = contactResp.data.properties;
+                        const contactName = `${contact.firstname || ''} ${contact.lastname || ''}`.trim();
+                        console.log(contactName);
+                        // ✅ attach to existing object
+                        data[i].contactName = contactName || '-';
+                    } catch (err) {
+                        data[i].contactName = '-';
+                    }
+                } else {
+                    data[i].contactName = '-';
+                }
+            }
+        }
+
+        res.render('homepage', { title: 'Home Page', data });      
     } catch (error) {
         console.error(error);
     }
@@ -39,7 +66,11 @@ app.get('/update-cobj', async (req, res) => {
     try {
         const resp = await axios.get(membership_types, { headers });
         const membershipOptions = resp?.data?.options;
-        res.render('updates', { title: 'Update Custom Object Form | Integrating With HubSpot I Practicum.', membershipOptions });    
+        // get contacts (Not for the real world example when contact count is bigger)
+        const get_contacts = 'https://api.hubspot.com/crm/v3/objects/0-1?properties=hs_object_id,firstname,lastname';
+        const response = await axios.get(get_contacts, { headers });
+        const contacts = response?.data?.results;
+        res.render('updates', { title: 'Update Custom Object Form | Integrating With HubSpot I Practicum.', membershipOptions, contacts });    
     } catch (error) {
         console.error(error);
     } 
@@ -50,7 +81,6 @@ app.get('/update-cobj', async (req, res) => {
 // * Code for Route 3 goes here
 app.post('/update-cobj', async (req, res) => {
     // Create Custom Object Record through the API using the form data
-    console.log(req.body);
     const createMembership = {
         properties: {
             "name": req.body.name,
@@ -67,7 +97,15 @@ app.post('/update-cobj', async (req, res) => {
     };
 
     try { 
-        await axios.post(membership, createMembership, { headers } );
+        const response =await axios.post(membership, createMembership, { headers } );
+        const membershipId = response.data.id;
+        if(membershipId){
+        await axios.put(
+                `https://api.hubspot.com/crm/v3/objects/2-227693084/${membershipId}/associations/0-1/${req.body.contact_id}/${process.env.associationTypeId}`,
+                {},
+                { headers }
+            );
+        }
         res.redirect('/');
     } catch(err) {
         console.error(err);

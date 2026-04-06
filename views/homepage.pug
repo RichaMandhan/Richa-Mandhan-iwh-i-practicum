@@ -6,7 +6,7 @@ html
         link(rel="stylesheet", href="/css/style.css")
     body    
         h1 Home Page
-        a.add-btn(href="/update-cobj") + Add to this route
+        a.add-btn(href="/update-cobj") + Add to this table
         table.membership-table
             thead
                 tr
@@ -14,6 +14,7 @@ html
                     th Membership Type
                     th Start Date
                     th End Date
+                    th Associated Contact
             tbody
                 each membership in data
                     tr
@@ -21,3 +22,4 @@ html
                         td #{(membership.properties.membership_type || '-').replace(/_/g, ' ')}
                         td #{membership.properties.start_date || '-'}
                         td #{membership.properties.end_date || '-'}
+                        td #{membership.contactName || '-'}

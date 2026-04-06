@@ -32,4 +32,10 @@ html
                     label(for="end_date") End Date
                     input(type="date", name="end_date", id="end_date", required)
 
+                .form-group
+                    label(for="contact_id") Contact Association
+                    select(name="contact_id", id="contact_id")
+                        each contact in contacts
+                            option(value=contact.properties.hs_object_id) #{contact.properties.firstname} #{contact.properties.lastname}
+
                 button(type="submit") Submit
